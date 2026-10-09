@@ -2,9 +2,18 @@ import { useEffect, useState } from 'react'
 import { loadState, saveState } from './lib/storage'
 import { BACKGROUND_PRESETS } from './lib/presets'
 import useIdbImage from './lib/useIdbImage'
+import ProfileHeader from './components/ProfileHeader'
 
 export default function App() {
   const [state, setState] = useState(loadState)
+  const [editMode, setEditMode] = useState(false)
+  const [toast, setToast] = useState(null)
+
+  function notify(message, kind) {
+    setToast({ message, kind })
+    window.clearTimeout(notify.timer)
+    notify.timer = window.setTimeout(() => setToast(null), 4000)
+  }
   const bgIdbUrl = useIdbImage(state.theme.background.type === 'idb' ? state.theme.background.value : null)
 
   useEffect(() => {
@@ -30,7 +39,17 @@ export default function App() {
   return (
     <>
       <div className="page-background" style={backgroundStyle} />
-      <div className="app">Shell ready</div>
+      <div className="app">
+        <ProfileHeader
+          profile={state.profile}
+          xp={state.xp}
+          editMode={editMode}
+          onProfileChange={(patch) => setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }))}
+          onToggleEdit={() => setEditMode((v) => !v)}
+          onOpenCustomize={() => {}}
+          onNotify={(m) => notify(m)}
+        />
+      </div>
     </>
   )
 }
