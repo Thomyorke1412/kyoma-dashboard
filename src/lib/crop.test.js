@@ -9,6 +9,7 @@ import {
   createCropState,
   cropScale,
   dragBy,
+  dragDelta,
   naturalPointAt,
   normalizeRotation,
   renderedSize,
@@ -273,6 +274,39 @@ describe('dragBy', () => {
     const state = open()
     dragBy(state, -30, 12)
     expect(state.offset).toEqual({ x: -100, y: 0 })
+  })
+})
+
+describe('dragDelta', () => {
+  it('returns the per-event delta and the next origin', () => {
+    expect(dragDelta({ x: 100, y: 50 }, { clientX: 120, clientY: 60 })).toEqual({
+      dx: 20,
+      dy: 10,
+      next: { x: 120, y: 60 },
+    })
+  })
+
+  it('tracks 1:1 across several short moves and one long move', () => {
+    let origin = { x: 0, y: 0 }
+    let totalX = 0
+    let totalY = 0
+    for (const point of [{ clientX: 10, clientY: 0 }, { clientX: 30, clientY: 5 }, { clientX: 20, clientY: 15 }]) {
+      const step = dragDelta(origin, point)
+      totalX += step.dx
+      totalY += step.dy
+      origin = step.next
+    }
+    expect(origin).toEqual({ x: 20, y: 15 })
+    const long = dragDelta({ x: 0, y: 0 }, { clientX: 20, clientY: 15 })
+    expect({ x: totalX, y: totalY }).toEqual({ x: long.dx, y: long.dy })
+  })
+
+  it('treats a non-finite pointer coordinate as no movement', () => {
+    expect(dragDelta({ x: 40, y: 30 }, { clientX: NaN, clientY: undefined })).toEqual({
+      dx: 0,
+      dy: 0,
+      next: { x: 40, y: 30 },
+    })
   })
 })
 

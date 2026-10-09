@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { arrowNudge, cropImageStyle, dragBy, wheelZoomFactor, zoomBy } from '../lib/crop'
+import { arrowNudge, cropImageStyle, dragBy, dragDelta, wheelZoomFactor, zoomBy } from '../lib/crop'
 
 export default function AvatarCropStage({ src, state, onChange, onFrameSize }) {
   const frameRef = useRef(null)
@@ -47,9 +47,9 @@ export default function AvatarCropStage({ src, state, onChange, onFrameSize }) {
   function handlePointerMove(event) {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
-    const dx = event.clientX - drag.x
-    const dy = event.clientY - drag.y
-    onChange((current) => dragBy(current, dx, dy))
+    const delta = dragDelta(drag, event)
+    dragRef.current = { pointerId: drag.pointerId, ...delta.next }
+    onChange((current) => dragBy(current, delta.dx, delta.dy))
   }
 
   function handlePointerUp(event) {

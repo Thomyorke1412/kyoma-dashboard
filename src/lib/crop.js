@@ -128,6 +128,16 @@ export function createCropState({ natural, frameSize, rotation = 0, zoom = MIN_Z
   }
 }
 
+export function dragDelta(origin, point) {
+  const x = Number.isFinite(point?.clientX) ? point.clientX : origin.x
+  const y = Number.isFinite(point?.clientY) ? point.clientY : origin.y
+  return {
+    dx: x - origin.x,
+    dy: y - origin.y,
+    next: { x, y },
+  }
+}
+
 export function dragBy(state, dx, dy) {
   const rendered = renderedSize(state.natural, state.rotation, state.zoom, state.frameSize)
   const moved = {

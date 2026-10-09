@@ -37,7 +37,7 @@ export default function useCropImage(source) {
       cancelled = true
       image.onload = null
       image.onerror = null
-      URL.revokeObjectURL(url)
+      setTimeout(() => URL.revokeObjectURL(url), 0)
     }
   }, [source])
 
