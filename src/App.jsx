@@ -5,6 +5,7 @@ import useIdbImage from './lib/useIdbImage'
 import ProfileHeader from './components/ProfileHeader'
 import CustomizePanel from './components/CustomizePanel'
 import CardGrid from './components/CardGrid'
+import ImageViewer from './components/ImageViewer'
 import { awardXp, XP_PER_NOTE, XP_PER_IMAGE } from './lib/xp'
 import { deleteBlob } from './lib/idb'
 
@@ -12,6 +13,7 @@ export default function App() {
   const [state, setState] = useState(loadState)
   const [editMode, setEditMode] = useState(false)
   const [customizeOpen, setCustomizeOpen] = useState(false)
+  const [viewerCardId, setViewerCardId] = useState(null)
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
 
@@ -70,6 +72,9 @@ export default function App() {
     setState((s) => ({ ...s, xp: awardXp(s.xp, XP_PER_IMAGE) }))
   }
 
+  const showcaseCards = state.cards.filter((c) => c.type === 'showcase' && c.image)
+  const viewerIndex = viewerCardId ? showcaseCards.findIndex((c) => c.id === viewerCardId) : -1
+
   return (
     <>
       <div className="page-background" style={backgroundStyle} />
@@ -90,7 +95,7 @@ export default function App() {
           onAddCard={addCard}
           onUpdateCard={updateCard}
           onDeleteCard={deleteCard}
-          onOpenViewer={() => {}}
+          onOpenViewer={(cardId) => setViewerCardId(cardId)}
           onImageAttached={attachImage}
           onNotify={(m) => notify(m)}
         />
@@ -101,6 +106,20 @@ export default function App() {
           onThemeChange={(patch) => setState((s) => ({ ...s, theme: { ...s.theme, ...patch } }))}
           onClose={() => setCustomizeOpen(false)}
           onNotify={notify}
+        />
+      )}
+      {viewerIndex >= 0 && (
+        <ImageViewer
+          items={showcaseCards.map((c) => ({ cardId: c.id, imageRef: c.image, caption: c.caption }))}
+          index={viewerIndex}
+          onClose={() => setViewerCardId(null)}
+          onNavigate={(dir) =>
+            setViewerCardId((cur) => {
+              const idx = showcaseCards.findIndex((c) => c.id === cur)
+              const next = (idx + dir + showcaseCards.length) % showcaseCards.length
+              return showcaseCards[next].id
+            })
+          }
         />
       )}
     </>
