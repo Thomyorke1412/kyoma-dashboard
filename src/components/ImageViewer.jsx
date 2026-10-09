@@ -27,7 +27,7 @@ export default function ImageViewer({ items, index, onClose, onNavigate }) {
 
   return (
     <div className="viewer" onClick={onClose}>
-      <ViewerImage item={item} />
+      <ViewerImage key={item.cardId} item={item} />
       {item.caption && <div className="viewer-caption">{item.caption}</div>}
       <button className="viewer-close" onClick={onClose}>
         ✕
