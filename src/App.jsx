@@ -6,6 +6,8 @@ import ProfileHeader from './components/ProfileHeader'
 import CustomizePanel from './components/CustomizePanel'
 import CardGrid from './components/CardGrid'
 import ImageViewer from './components/ImageViewer'
+import BackupButtons from './components/BackupButtons'
+import Toast from './components/Toast'
 import { awardXp, XP_PER_NOTE, XP_PER_IMAGE } from './lib/xp'
 import { deleteBlob } from './lib/idb'
 
@@ -88,6 +90,11 @@ export default function App() {
           onOpenCustomize={() => setCustomizeOpen(true)}
           onNotify={notify}
         />
+        <BackupButtons
+          state={state}
+          onRestore={(restored) => setState(restored)}
+          onNotify={notify}
+        />
         <CardGrid
           cards={state.cards}
           editMode={editMode}
@@ -122,6 +129,7 @@ export default function App() {
           }
         />
       )}
+      <Toast toast={toast} />
     </>
   )
 }
