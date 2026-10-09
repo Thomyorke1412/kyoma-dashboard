@@ -2,15 +2,20 @@ import { useState } from 'react'
 import { reorderCards, filterCards } from '../lib/cards'
 import ShowcaseCard from './ShowcaseCard'
 import TextNoteCard from './TextNoteCard'
+import GalleryRow from './GalleryRow'
 
-export default function CardGrid({ cards, editMode, query, onQueryChange, filterOpen, onOpenFilter, filterRef, onCardsChange, onAddCard, onUpdateCard, onDeleteCard, onImageAttached, onOpenViewer, onNotify }) {
+export default function CardGrid({ cards, galleryRows, editMode, query, onQueryChange, filterOpen, onOpenFilter, filterRef, onCardsChange, onAddCard, onUpdateCard, onDeleteCard, onImageAttached, onOpenRow, onNotify }) {
   const [dragId, setDragId] = useState(null)
   const [overId, setOverId] = useState(null)
   const visibleCards = filterCards(cards, query)
+  const galleryCardIds = new Set(galleryRows.flatMap((row) => row.cardIds))
+  const cardsById = new Map(cards.map((c) => [c.id, c]))
+  const restCards = visibleCards.filter((c) => !galleryCardIds.has(c.id))
 
   function dndProps(card) {
     return {
       draggable: editMode,
+      dragOver: overId === card.id,
       onDragStart: (e) => {
         e.dataTransfer.setData('text/plain', card.id)
         setDragId(card.id)
@@ -70,32 +75,53 @@ export default function CardGrid({ cards, editMode, query, onQueryChange, filter
       {cards.length > 0 && visibleCards.length === 0 && (
         <div className="empty-hint">No cards match “{query}”.</div>
       )}
-      <div className="cards-grid">
-        {visibleCards.map((card) =>
-          card.type === 'showcase' ? (
-            <ShowcaseCard
-              key={card.id}
-              card={card}
+      {galleryRows.length > 0 && (
+        <div className="gallery">
+          {galleryRows.map((row, index) => (
+            <GalleryRow
+              key={row.id}
+              row={row}
+              index={index}
+              cards={row.cardIds.map((id) => cardsById.get(id)).filter(Boolean)}
               editMode={editMode}
-              onChange={(patch) => onUpdateCard(card.id, patch)}
-              onDelete={() => onDeleteCard(card.id)}
+              onUpdateCard={onUpdateCard}
+              onDeleteCard={onDeleteCard}
               onImageAttached={onImageAttached}
-              onOpenViewer={() => onOpenViewer(card.id)}
+              onOpenRow={onOpenRow}
               onNotify={onNotify}
-              dnd={dndProps(card)}
+              dndProps={dndProps}
             />
-          ) : (
-            <TextNoteCard
-              key={card.id}
-              card={card}
-              editMode={editMode}
-              onChange={(patch) => onUpdateCard(card.id, patch)}
-              onDelete={() => onDeleteCard(card.id)}
-              dnd={dndProps(card)}
-            />
-          )
-        )}
-      </div>
+          ))}
+        </div>
+      )}
+      {restCards.length > 0 && (
+        <div className="cards-grid">
+          {restCards.map((card) =>
+            card.type === 'showcase' ? (
+              <ShowcaseCard
+                key={card.id}
+                card={card}
+                editMode={editMode}
+                onChange={(patch) => onUpdateCard(card.id, patch)}
+                onDelete={() => onDeleteCard(card.id)}
+                onImageAttached={onImageAttached}
+                onOpenViewer={() => onOpenRow(null, card.id)}
+                onNotify={onNotify}
+                dnd={dndProps(card)}
+              />
+            ) : (
+              <TextNoteCard
+                key={card.id}
+                card={card}
+                editMode={editMode}
+                onChange={(patch) => onUpdateCard(card.id, patch)}
+                onDelete={() => onDeleteCard(card.id)}
+                dnd={dndProps(card)}
+              />
+            )
+          )}
+        </div>
+      )}
     </section>
   )
 }

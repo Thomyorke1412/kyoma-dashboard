@@ -708,3 +708,44 @@ textarea:focus {
   font-size: 24px;
   width: 100%;
 }
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 9px;
+}
+
+.gallery-row-header {
+  font-family: 'Motiva Sans', sans-serif;
+  font-weight: 200;
+  font-size: 16px;
+  line-height: 30px;
+  color: #ffffff;
+  padding: 5px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: linear-gradient(90deg, var(--gradient-showcase-header-left) 0%, var(--color-showcase-header) 90%);
+}
+
+.gallery-row-body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 8px;
+  border-radius: 0 0 5px 5px;
+  background-color: rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+@media (max-width: 800px) {
+  .gallery-row-body {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .gallery-row-body {
+    grid-template-columns: 1fr;
+  }
+}

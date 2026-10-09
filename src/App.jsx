@@ -10,12 +10,16 @@ import BackupButtons from './components/BackupButtons'
 import Toast from './components/Toast'
 import { awardXp, XP_PER_NOTE, XP_PER_IMAGE } from './lib/xp'
 import { deleteBlob } from './lib/idb'
+import { filterCards } from './lib/cards'
+import { buildRows, resolveViewer } from './lib/gallery'
+
+const PER_ROW = 3
 
 export default function App() {
   const [state, setState] = useState(loadState)
   const [editMode, setEditMode] = useState(false)
   const [customizeOpen, setCustomizeOpen] = useState(false)
-  const [viewerCardId, setViewerCardId] = useState(null)
+  const [viewer, setViewer] = useState(null)
   const [toast, setToast] = useState(null)
   const [filterQuery, setFilterQuery] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
@@ -85,14 +89,26 @@ export default function App() {
     setState((s) => ({ ...s, xp: awardXp(s.xp, XP_PER_IMAGE) }))
   }
 
-  const showcaseCards = state.cards.filter((c) => c.type === 'showcase' && c.image)
-  const viewerIndex = viewerCardId ? showcaseCards.findIndex((c) => c.id === viewerCardId) : -1
+  const visibleCards = filterCards(state.cards, filterQuery)
+  const galleryRows = buildRows(visibleCards, PER_ROW)
+  const cardsById = new Map(state.cards.map((c) => [c.id, c]))
+  const { items: viewerItems, index: viewerIndex } = resolveViewer(galleryRows, cardsById, viewer?.rowId ?? null, viewer?.cardId ?? null)
+  const viewerRowActive = viewer !== null && viewerIndex >= 0
+
+  useEffect(() => {
+    if (viewer && !viewerRowActive) setViewer(null)
+  }, [viewer, viewerRowActive])
+
+  function openRow(rowId, cardId) {
+    const row = rowId ? galleryRows.find((r) => r.id === rowId) : galleryRows.find((r) => r.cardIds.includes(cardId))
+    if (row) setViewer({ rowId: row.id, cardId })
+  }
 
   useEffect(() => {
     function onKeyDown(e) {
       if (e.repeat) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (viewerIndex >= 0) return
+      if (viewer) return
 
       if (e.key === 'Escape') {
         setFilterQuery('')
@@ -116,7 +132,7 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [viewerIndex])
+  }, [viewer])
 
   return (
     <>
@@ -138,6 +154,7 @@ export default function App() {
         />
         <CardGrid
           cards={state.cards}
+          galleryRows={galleryRows}
           editMode={editMode}
           query={filterQuery}
           onQueryChange={setFilterQuery}
@@ -148,7 +165,7 @@ export default function App() {
           onAddCard={addCard}
           onUpdateCard={updateCard}
           onDeleteCard={deleteCard}
-          onOpenViewer={(cardId) => setViewerCardId(cardId)}
+          onOpenRow={openRow}
           onImageAttached={attachImage}
           onNotify={notify}
         />
@@ -163,16 +180,14 @@ export default function App() {
       )}
       {viewerIndex >= 0 && (
         <ImageViewer
-          items={showcaseCards.map((c) => ({ cardId: c.id, imageRef: c.image, caption: c.caption }))}
+          items={viewerItems.map((c) => ({ cardId: c.id, imageRef: c.image, caption: c.caption }))}
           index={viewerIndex}
-          onClose={() => setViewerCardId(null)}
-          onNavigate={(dir) =>
-            setViewerCardId((cur) => {
-              const idx = showcaseCards.findIndex((c) => c.id === cur)
-              const next = (idx + dir + showcaseCards.length) % showcaseCards.length
-              return showcaseCards[next].id
-            })
-          }
+          onClose={() => setViewer(null)}
+          onNavigate={(dir) => {
+            if (viewerItems.length === 0) return
+            const next = (viewerIndex + dir + viewerItems.length) % viewerItems.length
+            setViewer((cur) => (cur ? { ...cur, cardId: viewerItems[next].id } : cur))
+          }}
         />
       )}
       <Toast toast={toast} />
