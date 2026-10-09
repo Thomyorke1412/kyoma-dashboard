@@ -433,20 +433,6 @@ textarea:focus {
     box-sizing: border-box;
     width: 100%;
   }
-
-  .card-caption {
-    position: static;
-    padding: 6px 0 0;
-    background: transparent;
-    line-height: normal;
-    opacity: 1;
-    transform: none;
-  }
-
-  .card-media:hover .card-image,
-  .card:focus-within .card-image {
-    transform: none;
-  }
 }
 
 .card {
@@ -480,7 +466,7 @@ textarea:focus {
 
 .card-media:hover .card-image,
 .card:focus-within .card-image {
-  transform: scale(1.05);
+  transform: scale(1.01);
 }
 
 .card-image-placeholder {
@@ -519,6 +505,24 @@ textarea:focus {
 .card:focus-within .card-caption {
   opacity: 1;
   transform: translateY(0);
+}
+
+@media (max-width: 700px) {
+  .card-caption,
+  .card:hover .card-caption,
+  .card:focus-within .card-caption {
+    position: static;
+    padding: 6px 0 0;
+    background: transparent;
+    line-height: normal;
+    opacity: 1;
+    transform: none;
+  }
+
+  .card-media:hover .card-image,
+  .card:focus-within .card-image {
+    transform: none;
+  }
 }
 
 .card-caption-edit {

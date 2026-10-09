@@ -1,11 +1,5 @@
 import { levelProgress } from '../lib/xp'
-
-function levelTier(level) {
-  if (level >= 4300) return 4300
-  if (level >= 200) return 200
-  if (level >= 100) return 100
-  return Math.min(Math.floor(level / 10) * 10, 90)
-}
+import { levelTier } from '../lib/levels'
 
 export default function LevelBadge({ xp }) {
   const p = levelProgress(xp)
