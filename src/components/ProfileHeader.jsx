@@ -1,27 +1,60 @@
 import { useState } from 'react'
-import useIdbImage from '../lib/useIdbImage'
-import { putBlob } from '../lib/idb'
+import useIdbImage, { forgetIdbUrl } from '../lib/useIdbImage'
+import { getBlob, putBlob } from '../lib/idb'
+import { validateImageFile } from '../lib/crop'
+import AvatarCropDialog from './AvatarCropDialog'
 import LevelBadge from './LevelBadge'
 
+const AVATAR_KEY = 'avatar'
+
 export default function ProfileHeader({ profile, xp, editMode, onProfileChange, onToggleEdit, onOpenCustomize, onNotify }) {
-  const avatarUrl = useIdbImage(profile.avatar.type === 'idb' ? profile.avatar.value : null)
+  const [avatarVersion, setAvatarVersion] = useState(0)
+  const avatarUrl = useIdbImage(profile.avatar.type === 'idb' ? profile.avatar.value : null, { version: avatarVersion })
   const avatarSrc = profile.avatar.type === 'url' && profile.avatar.value ? profile.avatar.value : avatarUrl
   const [avatarUrlInput, setAvatarUrlInput] = useState('')
+  const [cropSource, setCropSource] = useState(null)
   const currentGame = profile.currentGame ?? ''
   const hoursPlayed = profile.hoursPlayed ?? ''
   const hasCurrentGame = currentGame !== '' || hoursPlayed !== ''
+  const canRecrop = profile.avatar.type === 'idb' && Boolean(avatarUrl)
 
-  async function handleAvatarFile(e) {
+  function handleAvatarFile(e) {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
+    const check = validateImageFile(file)
+    if (!check.ok) {
+      onNotify(check.message)
+      return
+    }
+    setCropSource(file)
+  }
+
+  async function handleRecrop() {
     try {
-      await putBlob('avatar', file)
-      onProfileChange({ avatar: { type: 'idb', value: 'avatar' } })
+      const blob = await getBlob(AVATAR_KEY)
+      if (!blob) {
+        onNotify('There is no stored avatar to crop.')
+        return
+      }
+      setCropSource(blob)
+    } catch {
+      onNotify('Could not read the stored avatar.')
+    }
+  }
+
+  async function handleCropSave(blob) {
+    try {
+      await putBlob(AVATAR_KEY, blob)
+      forgetIdbUrl(AVATAR_KEY)
+      setAvatarVersion((version) => version + 1)
+      onProfileChange({ avatar: { type: 'idb', value: AVATAR_KEY } })
     } catch {
       onNotify('Could not store avatar — browser storage may be full or blocked.')
     }
-    e.target.value = ''
+    setCropSource(null)
   }
+
 
   return (
     <header className="profile-header">
@@ -39,6 +72,11 @@ export default function ProfileHeader({ profile, xp, editMode, onProfileChange, 
               Upload avatar
               <input type="file" accept="image/*" hidden onChange={handleAvatarFile} />
             </label>
+            {canRecrop && (
+              <button className="btn btn-sm" onClick={handleRecrop}>
+                Re-crop
+              </button>
+            )}
             <input
               placeholder="Avatar URL"
               value={avatarUrlInput}
@@ -55,6 +93,14 @@ export default function ProfileHeader({ profile, xp, editMode, onProfileChange, 
               Set
             </button>
           </div>
+        )}
+        {cropSource && (
+          <AvatarCropDialog
+            source={cropSource}
+            onSave={handleCropSave}
+            onCancel={() => setCropSource(null)}
+            onNotify={onNotify}
+          />
         )}
       </div>
       <div className="profile-info">

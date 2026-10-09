@@ -7,8 +7,15 @@ export function getIdbUrlFromCache(key) {
   return urlCache.get(key) ?? null
 }
 
+export function forgetIdbUrl(key) {
+  const url = urlCache.get(key) ?? null
+  if (url) URL.revokeObjectURL(url)
+  urlCache.delete(key)
+  return url
+}
+
 export default function useIdbImage(key, options = {}) {
-  const { withStatus = false } = options
+  const { withStatus = false, version = 0 } = options
   const [state, setState] = useState(() => ({ url: key ? urlCache.get(key) ?? null : null, settled: !key }))
 
   useEffect(() => {
@@ -39,7 +46,7 @@ export default function useIdbImage(key, options = {}) {
     return () => {
       cancelled = true
     }
-  }, [key])
+  }, [key, version])
 
   if (!withStatus) return state.url
   return { url: state.url, status: state.settled ? (state.url ? 'ready' : 'missing') : 'loading' }
