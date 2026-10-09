@@ -10,7 +10,10 @@ export default function CardGrid({ cards, editMode, onCardsChange, onAddCard, on
   function dndProps(card) {
     return {
       draggable: editMode,
-      onDragStart: () => setDragId(card.id),
+      onDragStart: (e) => {
+        e.dataTransfer.setData('text/plain', card.id)
+        setDragId(card.id)
+      },
       onDragOver: (e) => {
         e.preventDefault()
         if (overId !== card.id) setOverId(card.id)
