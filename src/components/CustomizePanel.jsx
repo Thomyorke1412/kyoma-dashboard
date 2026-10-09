@@ -14,6 +14,7 @@ export default function CustomizePanel({ theme, onThemeChange, onClose, onNotify
     } catch {
       onNotify('Could not store background image — browser storage may be full or blocked.')
     }
+    e.target.value = ''
   }
 
   function applyUrl() {

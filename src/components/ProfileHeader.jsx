@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import useIdbImage from '../lib/useIdbImage'
 import { putBlob } from '../lib/idb'
 import LevelBadge from './LevelBadge'
@@ -5,6 +6,7 @@ import LevelBadge from './LevelBadge'
 export default function ProfileHeader({ profile, xp, editMode, onProfileChange, onToggleEdit, onOpenCustomize, onNotify }) {
   const avatarUrl = useIdbImage(profile.avatar.type === 'idb' ? profile.avatar.value : null)
   const avatarSrc = profile.avatar.type === 'url' && profile.avatar.value ? profile.avatar.value : avatarUrl
+  const [avatarUrlInput, setAvatarUrlInput] = useState('')
 
   async function handleAvatarFile(e) {
     const file = e.target.files?.[0]
@@ -15,6 +17,7 @@ export default function ProfileHeader({ profile, xp, editMode, onProfileChange, 
     } catch {
       onNotify('Could not store avatar — browser storage may be full or blocked.')
     }
+    e.target.value = ''
   }
 
   return (
@@ -33,6 +36,21 @@ export default function ProfileHeader({ profile, xp, editMode, onProfileChange, 
               Upload avatar
               <input type="file" accept="image/*" hidden onChange={handleAvatarFile} />
             </label>
+            <input
+              placeholder="Avatar URL"
+              value={avatarUrlInput}
+              onChange={(e) => setAvatarUrlInput(e.target.value)}
+              style={{ width: '100%', marginTop: 6 }}
+            />
+            <button
+              className="btn btn-sm"
+              onClick={() => {
+                if (avatarUrlInput.trim()) onProfileChange({ avatar: { type: 'url', value: avatarUrlInput.trim() } })
+              }}
+              style={{ marginTop: 6 }}
+            >
+              Set
+            </button>
           </div>
         )}
       </div>

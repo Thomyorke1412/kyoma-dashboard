@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { loadState, saveState } from './lib/storage'
+import { loadState, saveState, mergeWithDefaults } from './lib/storage'
 import { BACKGROUND_PRESETS } from './lib/presets'
 import useIdbImage from './lib/useIdbImage'
 import ProfileHeader from './components/ProfileHeader'
@@ -27,7 +27,11 @@ export default function App() {
   const bgIdbUrl = useIdbImage(state.theme.background.type === 'idb' ? state.theme.background.value : null)
 
   useEffect(() => {
-    saveState(state)
+    try {
+      saveState(state)
+    } catch {
+      notify('Could not save — browser storage is full.')
+    }
   }, [state])
 
   useEffect(() => {
@@ -92,7 +96,7 @@ export default function App() {
         />
         <BackupButtons
           state={state}
-          onRestore={(restored) => setState(restored)}
+          onRestore={(restored) => setState(mergeWithDefaults(restored))}
           onNotify={notify}
         />
         <CardGrid
@@ -104,7 +108,7 @@ export default function App() {
           onDeleteCard={deleteCard}
           onOpenViewer={(cardId) => setViewerCardId(cardId)}
           onImageAttached={attachImage}
-          onNotify={(m) => notify(m)}
+          onNotify={notify}
         />
       </div>
       {customizeOpen && (

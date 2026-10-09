@@ -21,7 +21,7 @@ function clone(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
-function mergeWithDefaults(raw) {
+export function mergeWithDefaults(raw) {
   const profile = raw?.profile ?? {}
   const theme = raw?.theme ?? {}
   return {

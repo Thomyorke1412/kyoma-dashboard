@@ -21,6 +21,7 @@ export default function ShowcaseCard({ card, editMode, onChange, onDelete, onIma
     } catch {
       onNotify('Could not store image — browser storage may be full or blocked.')
     }
+    e.target.value = ''
   }
 
   function applyUrl() {
