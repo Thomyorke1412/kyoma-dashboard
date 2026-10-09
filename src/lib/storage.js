@@ -1,3 +1,5 @@
+import { clampAdjust, DEFAULT_ADJUST } from './backgroundAdjust'
+
 const STORAGE_KEY = 'steam-dashboard-state-v1'
 
 export const DEFAULT_STATE = {
@@ -13,7 +15,7 @@ export const DEFAULT_STATE = {
   },
   theme: {
     accent: '#66c0f4',
-    background: { type: 'preset', value: 'steam-dark' },
+    background: { type: 'preset', value: 'steam-dark', adjust: { ...DEFAULT_ADJUST } },
   },
   cards: [],
   xp: 0,
@@ -36,7 +38,11 @@ export function mergeWithDefaults(raw) {
     theme: {
       ...clone(DEFAULT_STATE.theme),
       ...theme,
-      background: { ...DEFAULT_STATE.theme.background, ...(theme.background ?? {}) },
+      background: {
+        ...DEFAULT_STATE.theme.background,
+        ...(theme.background ?? {}),
+        adjust: clampAdjust(theme.background?.adjust),
+      },
     },
     cards: Array.isArray(raw?.cards) ? raw.cards : [],
     xp: typeof raw?.xp === 'number' ? raw.xp : 0,

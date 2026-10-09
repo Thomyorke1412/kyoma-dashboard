@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { loadState, saveState, mergeWithDefaults } from './lib/storage'
 import { BACKGROUND_PRESETS } from './lib/presets'
+import { backgroundDimStyle, backgroundLayerStyle } from './lib/backgroundAdjust'
 import useIdbImage from './lib/useIdbImage'
 import ProfileHeader from './components/ProfileHeader'
 import CustomizePanel from './components/CustomizePanel'
@@ -15,60 +16,26 @@ import { buildRows, resolveViewer, wrapIndex } from './lib/gallery'
 
 const PER_ROW = 3
 
-export default function App() {
-  const [state, setState] = useState(loadState)
+const DashboardContent = memo(function DashboardContent({ profile, xp, cards, setState, toast, onOpenCustomize, onNotify, onRestore, getState }) {
   const [editMode, setEditMode] = useState(false)
-  const [customizeOpen, setCustomizeOpen] = useState(false)
   const [viewer, setViewer] = useState(null)
-  const [toast, setToast] = useState(null)
   const [filterQuery, setFilterQuery] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
-  const toastTimer = useRef(null)
   const filterRef = useRef(null)
 
-  function notify(message, kind) {
-    setToast({ message, kind })
-    window.clearTimeout(toastTimer.current)
-    toastTimer.current = window.setTimeout(() => setToast(null), 4000)
-  }
-  const bgIdbUrl = useIdbImage(state.theme.background.type === 'idb' ? state.theme.background.value : null)
-
-  useEffect(() => {
-    try {
-      saveState(state)
-    } catch {
-      notify('Could not save — browser storage is full.')
-    }
-  }, [state])
-
-  useEffect(() => {
-    if (filterOpen && filterRef.current) filterRef.current.focus()
-  }, [filterOpen])
-
-  useEffect(() => {
-    document.documentElement.style.setProperty('--accent', state.theme.accent)
-  }, [state.theme.accent])
-
-  const bg = state.theme.background
-  let backgroundStyle = { background: BACKGROUND_PRESETS['steam-dark'] }
-  if (bg.type === 'preset') {
-    backgroundStyle = { background: BACKGROUND_PRESETS[bg.value] ?? BACKGROUND_PRESETS['steam-dark'] }
-  } else if (bg.type === 'color') {
-    backgroundStyle = { background: bg.value }
-  } else if (bg.type === 'url' && bg.value) {
-    backgroundStyle = { backgroundImage: `url("${bg.value}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
-  } else if (bg.type === 'idb' && bgIdbUrl) {
-    backgroundStyle = { backgroundImage: `url("${bgIdbUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  function handleProfileChange(patch) {
+    setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }))
   }
 
   function addCard(type) {
-    const card =
-      type === 'note'
-        ? { id: crypto.randomUUID(), type: 'note', title: 'New Note', body: '' }
-        : { id: crypto.randomUUID(), type: 'showcase', image: null, caption: '' }
     setState((s) => ({
       ...s,
-      cards: [...s.cards, card],
+      cards: [
+        ...s.cards,
+        type === 'note'
+          ? { id: crypto.randomUUID(), type: 'note', title: 'New Note', body: '' }
+          : { id: crypto.randomUUID(), type: 'showcase', image: null, caption: '' },
+      ],
       xp: type === 'note' ? awardXp(s.xp, XP_PER_NOTE) : s.xp,
     }))
   }
@@ -78,22 +45,31 @@ export default function App() {
   }
 
   function deleteCard(id) {
-    const card = state.cards.find((c) => c.id === id)
+    const card = cards.find((c) => c.id === id)
     setState((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== id) }))
     if (card?.image?.type === 'idb') {
-      deleteBlob(card.image.value).catch(() => notify('Could not clean up the stored image file.'))
+      deleteBlob(card.image.value).catch(() => onNotify('Could not clean up the stored image file.'))
     }
   }
 
-  function attachImage(cardId) {
+  function attachImage() {
     setState((s) => ({ ...s, xp: awardXp(s.xp, XP_PER_IMAGE) }))
   }
 
-  const visibleCards = filterCards(state.cards, filterQuery)
+  const visibleCards = filterCards(cards, filterQuery)
   const galleryRows = buildRows(visibleCards, PER_ROW)
-  const cardsById = new Map(state.cards.map((c) => [c.id, c]))
-  const { items: viewerItems, index: viewerIndex, cardId: resolvedViewerCardId } = resolveViewer(galleryRows, cardsById, viewer?.rowId ?? null, viewer?.cardId ?? null)
+  const cardsById = new Map(cards.map((c) => [c.id, c]))
+  const { items: viewerItems, index: viewerIndex, cardId: resolvedViewerCardId } = resolveViewer(
+    galleryRows,
+    cardsById,
+    viewer?.rowId ?? null,
+    viewer?.cardId ?? null,
+  )
   const viewerRowActive = viewer !== null && viewerIndex >= 0
+
+  useEffect(() => {
+    if (filterOpen && filterRef.current) filterRef.current.focus()
+  }, [filterOpen])
 
   useEffect(() => {
     if (!viewer) return
@@ -137,50 +113,35 @@ export default function App() {
   }, [viewer])
 
   return (
-    <>
-      <div className="page-background" style={backgroundStyle} />
-      <div className="app">
-        <ProfileHeader
-          profile={state.profile}
-          xp={state.xp}
-          editMode={editMode}
-          onProfileChange={(patch) => setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }))}
-          onToggleEdit={() => setEditMode((v) => !v)}
-          onOpenCustomize={() => setCustomizeOpen(true)}
-          onNotify={notify}
-        />
-        <BackupButtons
-          state={state}
-          onRestore={(restored) => setState(mergeWithDefaults(restored))}
-          onNotify={notify}
-        />
-        <CardGrid
-          cards={state.cards}
-          visibleCards={visibleCards}
-          galleryRows={galleryRows}
-          editMode={editMode}
-          query={filterQuery}
-          onQueryChange={setFilterQuery}
-          filterOpen={filterOpen || editMode || filterQuery !== ''}
-          onOpenFilter={() => setFilterOpen(true)}
-          filterRef={filterRef}
-          onCardsChange={(cards) => setState((s) => ({ ...s, cards }))}
-          onAddCard={addCard}
-          onUpdateCard={updateCard}
-          onDeleteCard={deleteCard}
-          onOpenRow={openRow}
-          onImageAttached={attachImage}
-          onNotify={notify}
-        />
-      </div>
-      {customizeOpen && (
-        <CustomizePanel
-          theme={state.theme}
-          onThemeChange={(patch) => setState((s) => ({ ...s, theme: { ...s.theme, ...patch } }))}
-          onClose={() => setCustomizeOpen(false)}
-          onNotify={notify}
-        />
-      )}
+    <div className="app">
+      <ProfileHeader
+        profile={profile}
+        xp={xp}
+        editMode={editMode}
+        onProfileChange={handleProfileChange}
+        onToggleEdit={() => setEditMode((v) => !v)}
+        onOpenCustomize={onOpenCustomize}
+        onNotify={onNotify}
+      />
+      <BackupButtons getState={getState} onRestore={onRestore} onNotify={onNotify} />
+      <CardGrid
+        cards={cards}
+        visibleCards={visibleCards}
+        galleryRows={galleryRows}
+        editMode={editMode}
+        query={filterQuery}
+        onQueryChange={setFilterQuery}
+        filterOpen={filterOpen || editMode || filterQuery !== ''}
+        onOpenFilter={() => setFilterOpen(true)}
+        filterRef={filterRef}
+        onCardsChange={(next) => setState((s) => ({ ...s, cards: next }))}
+        onAddCard={addCard}
+        onUpdateCard={updateCard}
+        onDeleteCard={deleteCard}
+        onImageAttached={attachImage}
+        onOpenRow={openRow}
+        onNotify={onNotify}
+      />
       {viewerIndex >= 0 && (
         <ImageViewer
           items={viewerItems.map((c) => ({ cardId: c.id, imageRef: c.image, caption: c.caption }))}
@@ -194,6 +155,84 @@ export default function App() {
         />
       )}
       <Toast toast={toast} />
+    </div>
+  )
+})
+
+export default function App() {
+  const [state, setState] = useState(loadState)
+  const [customizeOpen, setCustomizeOpen] = useState(false)
+  const [toast, setToast] = useState(null)
+  const toastTimer = useRef(null)
+  const stateRef = useRef(state)
+  stateRef.current = state
+
+  const notify = useCallback((message, kind) => {
+    setToast({ message, kind })
+    window.clearTimeout(toastTimer.current)
+    toastTimer.current = window.setTimeout(() => setToast(null), 4000)
+  }, [])
+
+  const bgIdbUrl = useIdbImage(state.theme.background.type === 'idb' ? state.theme.background.value : null)
+
+  useEffect(() => {
+    try {
+      saveState(state)
+    } catch {
+      notify('Could not save — browser storage is full.')
+    }
+  }, [state, notify])
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', state.theme.accent)
+  }, [state.theme.accent])
+
+  const bg = state.theme.background
+  let backgroundStyle = { background: BACKGROUND_PRESETS['steam-dark'] }
+  if (bg.type === 'preset') {
+    backgroundStyle = { background: BACKGROUND_PRESETS[bg.value] ?? BACKGROUND_PRESETS['steam-dark'] }
+  } else if (bg.type === 'color') {
+    backgroundStyle = { background: bg.value }
+  }
+  const bgImageUrl = bg.type === 'idb' ? bgIdbUrl : bg.type === 'url' ? bg.value : null
+
+  const handleThemeChange = useCallback((patch) => {
+    setState((s) => ({ ...s, theme: { ...s.theme, ...patch } }))
+  }, [])
+  const openCustomize = useCallback(() => setCustomizeOpen(true), [])
+  const closeCustomize = useCallback(() => setCustomizeOpen(false), [])
+  const getState = useCallback(() => stateRef.current, [])
+  const handleRestore = useCallback((restored) => setState(mergeWithDefaults(restored)), [])
+
+  return (
+    <>
+      <div className="page-background" style={backgroundStyle}>
+        {bgImageUrl && (
+          <>
+            <img className="bg-layer" src={bgImageUrl} alt="" draggable={false} style={backgroundLayerStyle(bg.adjust)} />
+            <div className="bg-dim" style={backgroundDimStyle(bg.adjust)} />
+          </>
+        )}
+      </div>
+      <DashboardContent
+        profile={state.profile}
+        xp={state.xp}
+        cards={state.cards}
+        setState={setState}
+        toast={toast}
+        onOpenCustomize={openCustomize}
+        onNotify={notify}
+        onRestore={handleRestore}
+        getState={getState}
+      />
+      {customizeOpen && (
+        <CustomizePanel
+          theme={state.theme}
+          onThemeChange={handleThemeChange}
+          onClose={closeCustomize}
+          onNotify={notify}
+        />
+      )}
     </>
   )
 }

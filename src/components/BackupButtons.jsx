@@ -1,9 +1,9 @@
 import { buildBackup, restoreBackup } from '../lib/backup'
 
-export default function BackupButtons({ state, onRestore, onNotify }) {
+export default function BackupButtons({ getState, onRestore, onNotify }) {
   async function handleExport() {
     try {
-      const backup = await buildBackup(state)
+      const backup = await buildBackup(getState())
       const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
