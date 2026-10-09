@@ -303,6 +303,7 @@ textarea:focus {
 
 .backup-row,
 .cards-section {
+  box-sizing: content-box;
   width: 952px;
   max-width: 100%;
   margin-left: auto;
