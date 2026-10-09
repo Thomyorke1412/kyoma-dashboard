@@ -4,6 +4,9 @@ import { BACKGROUND_PRESETS } from './lib/presets'
 import useIdbImage from './lib/useIdbImage'
 import ProfileHeader from './components/ProfileHeader'
 import CustomizePanel from './components/CustomizePanel'
+import CardGrid from './components/CardGrid'
+import { awardXp, XP_PER_NOTE, XP_PER_IMAGE } from './lib/xp'
+import { deleteBlob } from './lib/idb'
 
 export default function App() {
   const [state, setState] = useState(loadState)
@@ -39,6 +42,34 @@ export default function App() {
     backgroundStyle = { backgroundImage: `url("${bgIdbUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center' }
   }
 
+  function addCard(type) {
+    const card =
+      type === 'note'
+        ? { id: crypto.randomUUID(), type: 'note', title: 'New Note', body: '' }
+        : { id: crypto.randomUUID(), type: 'showcase', image: null, caption: '' }
+    setState((s) => ({
+      ...s,
+      cards: [...s.cards, card],
+      xp: type === 'note' ? awardXp(s.xp, XP_PER_NOTE) : s.xp,
+    }))
+  }
+
+  function updateCard(id, patch) {
+    setState((s) => ({ ...s, cards: s.cards.map((c) => (c.id === id ? { ...c, ...patch } : c)) }))
+  }
+
+  function deleteCard(id) {
+    const card = state.cards.find((c) => c.id === id)
+    setState((s) => ({ ...s, cards: s.cards.filter((c) => c.id !== id) }))
+    if (card?.image?.type === 'idb') {
+      deleteBlob(card.image.value).catch(() => notify('Could not clean up the stored image file.'))
+    }
+  }
+
+  function attachImage(cardId) {
+    setState((s) => ({ ...s, xp: awardXp(s.xp, XP_PER_IMAGE) }))
+  }
+
   return (
     <>
       <div className="page-background" style={backgroundStyle} />
@@ -51,6 +82,17 @@ export default function App() {
           onToggleEdit={() => setEditMode((v) => !v)}
           onOpenCustomize={() => setCustomizeOpen(true)}
           onNotify={notify}
+        />
+        <CardGrid
+          cards={state.cards}
+          editMode={editMode}
+          onCardsChange={(cards) => setState((s) => ({ ...s, cards }))}
+          onAddCard={addCard}
+          onUpdateCard={updateCard}
+          onDeleteCard={deleteCard}
+          onOpenViewer={() => {}}
+          onImageAttached={attachImage}
+          onNotify={(m) => notify(m)}
         />
       </div>
       {customizeOpen && (
