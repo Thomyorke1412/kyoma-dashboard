@@ -7,3 +7,12 @@ export function reorderCards(cards, fromId, toId) {
   next.splice(to, 0, moved)
   return next
 }
+
+export function filterCards(cards, query) {
+  const q = query.trim().toLowerCase()
+  if (!q) return cards
+  return cards.filter((c) => {
+    const hay = c.type === 'note' ? `${c.title} ${c.body}` : `${c.caption}`
+    return hay.toLowerCase().includes(q)
+  })
+}

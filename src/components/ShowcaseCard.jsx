@@ -1,12 +1,27 @@
 import { useState } from 'react'
 import useIdbImage from '../lib/useIdbImage'
+import { describeImageState, isMissingBlob } from '../lib/images'
 import { putBlob } from '../lib/idb'
 
 export default function ShowcaseCard({ card, editMode, onChange, onDelete, onImageAttached, onOpenViewer, onNotify, dnd }) {
-  const idbUrl = useIdbImage(card.image?.type === 'idb' ? card.image.value : null)
+  const idbKey = card.image?.type === 'idb' ? card.image.value : null
+  const { url: idbUrl, status: idbStatus } = useIdbImage(idbKey, { withStatus: true })
   const imageUrl = card.image?.type === 'url' ? card.image.value : idbUrl
   const [urlInput, setUrlInput] = useState('')
   const [failed, setFailed] = useState(false)
+
+  const imageState = describeImageState({
+    hasImage: Boolean(card.image),
+    resolvedUrl: imageUrl,
+    failed,
+    missing: isMissingBlob(card.image, imageUrl, idbStatus !== 'loading'),
+  })
+  const placeholderText =
+    imageState === 'missing' || imageState === 'failed'
+      ? 'Image missing'
+      : imageState === 'loading'
+        ? 'Loading…'
+        : 'No image'
 
   async function handleFile(e) {
     const file = e.target.files?.[0]
@@ -56,9 +71,7 @@ export default function ShowcaseCard({ card, editMode, onChange, onDelete, onIma
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="card-image-placeholder">
-          {failed ? 'Image failed to load' : card.image ? 'Loading…' : 'No image'}
-        </div>
+        <div className="card-image-placeholder">{placeholderText}</div>
       )}
       <div className="card-caption">
         {editMode ? (

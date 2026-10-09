@@ -336,6 +336,17 @@ textarea:focus {
   margin-bottom: 10px;
 }
 
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filter-row input {
+  flex: 1;
+  min-width: 0;
+}
+
 .empty-hint {
   color: var(--text-dim);
   padding: 24px;
@@ -360,6 +371,45 @@ textarea:focus {
 @media (max-width: 540px) {
   .cards-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .profile-header {
+    flex-direction: column;
+    padding: 16px 12px 12px;
+    gap: 12px;
+  }
+
+  .avatar-column,
+  .avatar-frame {
+    width: 120px;
+  }
+
+  .avatar-frame {
+    height: 120px;
+  }
+
+  .profile-info {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .btn {
+    white-space: nowrap;
+  }
+
+  .header-actions,
+  .add-row,
+  .backup-row {
+    flex-wrap: wrap;
+  }
+
+  .cards-section,
+  .backup-row {
+    box-sizing: border-box;
+    width: 100%;
   }
 }
 

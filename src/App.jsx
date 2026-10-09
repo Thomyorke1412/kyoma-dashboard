@@ -17,7 +17,10 @@ export default function App() {
   const [customizeOpen, setCustomizeOpen] = useState(false)
   const [viewerCardId, setViewerCardId] = useState(null)
   const [toast, setToast] = useState(null)
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
   const toastTimer = useRef(null)
+  const filterRef = useRef(null)
 
   function notify(message, kind) {
     setToast({ message, kind })
@@ -33,6 +36,38 @@ export default function App() {
       notify('Could not save — browser storage is full.')
     }
   }, [state])
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      if (e.key === 'Escape') {
+        setFilterQuery('')
+        setFilterOpen(false)
+        return
+      }
+
+      const target = e.target
+      const typing =
+        target instanceof HTMLElement &&
+        (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)
+      if (typing) return
+
+      if (e.key === 'e' || e.key === 'E') {
+        setEditMode((v) => !v)
+      } else if (e.key === '/') {
+        e.preventDefault()
+        setFilterOpen(true)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  useEffect(() => {
+    if (filterOpen && filterRef.current) filterRef.current.focus()
+  }, [filterOpen])
 
   useEffect(() => {
     document.documentElement.style.setProperty('--accent', state.theme.accent)
@@ -102,6 +137,11 @@ export default function App() {
         <CardGrid
           cards={state.cards}
           editMode={editMode}
+          query={filterQuery}
+          onQueryChange={setFilterQuery}
+          filterOpen={filterOpen || editMode || filterQuery !== ''}
+          onOpenFilter={() => setFilterOpen(true)}
+          filterRef={filterRef}
           onCardsChange={(cards) => setState((s) => ({ ...s, cards }))}
           onAddCard={addCard}
           onUpdateCard={updateCard}

@@ -44,4 +44,31 @@ describe('backup', () => {
     await expect(restoreBackup({ version: 2, state: {} })).rejects.toThrow('Invalid backup file')
     await expect(restoreBackup({ version: 1 })).rejects.toThrow('Invalid backup file')
   })
+
+  it('deletes stored blobs that the backup does not contain', async () => {
+    await putBlob('img-orphan', new Blob(['orphan-bytes'], { type: 'image/png' }))
+    const backup = await buildBackup(state)
+    await restoreBackup(backup)
+    expect(await getBlob('img-orphan')).toBeNull()
+    expect(await getAllBlobKeys()).toEqual(expect.arrayContaining(['avatar', 'img-c1']))
+  })
+
+  it('deletes every stored blob when the backup has no images key', async () => {
+    await putBlob('img-orphan', new Blob(['orphan-bytes'], { type: 'image/png' }))
+    const backup = await buildBackup(state)
+    delete backup.images
+    await restoreBackup(backup)
+    expect(await getAllBlobKeys()).toEqual([])
+  })
+
+  it('routes orphan deletion through the injected delete function', async () => {
+    await putBlob('img-orphan', new Blob(['orphan-bytes'], { type: 'image/png' }))
+    const backup = await buildBackup(state)
+    const deleted = []
+    await restoreBackup(backup, putBlob, (key) => {
+      deleted.push(key)
+      return deleteBlob(key)
+    })
+    expect(deleted).toEqual(['img-orphan'])
+  })
 })

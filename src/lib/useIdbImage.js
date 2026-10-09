@@ -7,36 +7,40 @@ export function getIdbUrlFromCache(key) {
   return urlCache.get(key) ?? null
 }
 
-export default function useIdbImage(key) {
-  const [url, setUrl] = useState(() => (key ? urlCache.get(key) ?? null : null))
+export default function useIdbImage(key, options = {}) {
+  const { withStatus = false } = options
+  const [state, setState] = useState(() => ({ url: key ? urlCache.get(key) ?? null : null, settled: !key }))
 
   useEffect(() => {
     if (!key) {
-      setUrl(null)
+      setState({ url: null, settled: true })
       return
     }
     if (urlCache.has(key)) {
-      setUrl(urlCache.get(key))
+      setState({ url: urlCache.get(key), settled: true })
       return
     }
     let cancelled = false
+    setState({ url: null, settled: false })
     getBlob(key)
       .then((blob) => {
-        if (blob && !cancelled) {
+        if (cancelled) return
+        if (blob) {
           const objectUrl = URL.createObjectURL(blob)
           urlCache.set(key, objectUrl)
-          setUrl(objectUrl)
-        } else if (!blob && !cancelled) {
-          setUrl(null)
+          setState({ url: objectUrl, settled: true })
+        } else {
+          setState({ url: null, settled: true })
         }
       })
       .catch(() => {
-        if (!cancelled) setUrl(null)
+        if (!cancelled) setState({ url: null, settled: true })
       })
     return () => {
       cancelled = true
     }
   }, [key])
 
-  return url
+  if (!withStatus) return state.url
+  return { url: state.url, status: state.settled ? (state.url ? 'ready' : 'missing') : 'loading' }
 }
