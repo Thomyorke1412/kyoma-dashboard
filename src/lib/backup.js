@@ -25,17 +25,23 @@ export async function buildBackup(state, getBlobFn = getBlob) {
   return { version: 1, exportedAt: new Date().toISOString(), state, images }
 }
 
-export async function restoreBackup(backup, putBlobFn = putBlob, deleteBlobFn = deleteBlob) {
+export async function restoreBackup(
+  backup,
+  putBlobFn = putBlob,
+  deleteBlobFn = deleteBlob,
+  getAllBlobKeysFn = getAllBlobKeys
+) {
   if (!backup || backup.version !== 1 || !backup.state || typeof backup.state !== 'object') {
     throw new Error('Invalid backup file')
   }
-  const images = backup.images ?? {}
+  if (!backup.images) return backup.state
+  const images = backup.images
   for (const [key, dataUrl] of Object.entries(images)) {
     if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) continue
     await putBlobFn(key, dataUrlToBlob(dataUrl))
   }
-  const kept = new Set(Object.keys(images))
-  for (const key of await getAllBlobKeys()) {
+  const kept = new Set([...Object.keys(images), ...collectIdbRefs(backup.state)])
+  for (const key of await getAllBlobKeysFn()) {
     if (!kept.has(key)) await deleteBlobFn(key)
   }
   return backup.state

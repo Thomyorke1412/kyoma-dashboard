@@ -53,12 +53,88 @@ describe('backup', () => {
     expect(await getAllBlobKeys()).toEqual(expect.arrayContaining(['avatar', 'img-c1']))
   })
 
-  it('deletes every stored blob when the backup has no images key', async () => {
+  it('deletes nothing when the backup has no images key', async () => {
     await putBlob('img-orphan', new Blob(['orphan-bytes'], { type: 'image/png' }))
     const backup = await buildBackup(state)
     delete backup.images
-    await restoreBackup(backup)
+    const restored = await restoreBackup(backup)
+    expect(restored.profile.displayName).toBe('New User')
+    expect(await getAllBlobKeys()).toEqual(expect.arrayContaining(['avatar', 'img-c1', 'img-orphan']))
+  })
+
+  it('writes no blobs and deletes none when the images key is absent', async () => {
+    const backup = await buildBackup(state)
+    delete backup.images
+    const written = []
+    const deleted = []
+    await restoreBackup(
+      backup,
+      (key, blob) => {
+        written.push(key)
+        return putBlob(key, blob)
+      },
+      (key) => {
+        deleted.push(key)
+        return deleteBlob(key)
+      },
+      async () => ['avatar', 'img-c1', 'img-orphan']
+    )
+    expect(written).toEqual([])
+    expect(deleted).toEqual([])
+  })
+
+  it('sweeps for an explicit empty images map but not when the key is absent', async () => {
+    const refFreeState = JSON.parse(JSON.stringify(DEFAULT_STATE))
+    const swept = { version: 1, state: refFreeState, images: {} }
+    await restoreBackup(swept)
     expect(await getAllBlobKeys()).toEqual([])
+
+    await putBlob('avatar', new Blob(['avatar-bytes'], { type: 'image/png' }))
+    await putBlob('img-orphan', new Blob(['orphan-bytes'], { type: 'image/png' }))
+    const absent = { version: 1, state: refFreeState }
+    await restoreBackup(absent)
+    expect(await getAllBlobKeys()).toEqual(expect.arrayContaining(['avatar', 'img-orphan']))
+  })
+
+  it('keeps a blob the restored state still references even when the backup omits it', async () => {
+    await putBlob('img-ghost', new Blob(['ghost-bytes'], { type: 'image/png' }))
+    const backup = {
+      version: 1,
+      state: {
+        ...JSON.parse(JSON.stringify(DEFAULT_STATE)),
+        cards: [{ id: 'g1', type: 'showcase', image: { type: 'idb', value: 'img-ghost' }, caption: '' }],
+      },
+      images: {},
+    }
+    const deleted = []
+    await restoreBackup(backup, putBlob, (key) => {
+      deleted.push(key)
+      return deleteBlob(key)
+    })
+    expect(deleted).not.toContain('img-ghost')
+    expect(await getBlob('img-ghost')).not.toBeNull()
+  })
+
+  it('keeps a referenced key reachable only through the restored state after an omitted blob', async () => {
+    const backup = await buildBackup(state)
+    await deleteBlob('img-c1')
+    const trimmed = {
+      version: 1,
+      state: {
+        ...backup.state,
+        cards: [{ id: 'c9', type: 'showcase', image: { type: 'idb', value: 'img-c1' }, caption: '' }],
+      },
+      images: { ...backup.images },
+    }
+    delete trimmed.images['img-c1']
+    await putBlob('img-c1', new Blob(['local-copy'], { type: 'image/gif' }))
+    const deleted = []
+    await restoreBackup(trimmed, putBlob, (key) => {
+      deleted.push(key)
+      return deleteBlob(key)
+    })
+    expect(deleted).not.toContain('img-c1')
+    expect(await (await getBlob('img-c1')).text()).toBe('local-copy')
   })
 
   it('routes orphan deletion through the injected delete function', async () => {
@@ -69,6 +145,21 @@ describe('backup', () => {
       deleted.push(key)
       return deleteBlob(key)
     })
+    expect(deleted).toEqual(['img-orphan'])
+  })
+
+  it('routes the sweep enumeration through the injected key lister', async () => {
+    const backup = await buildBackup(state)
+    const deleted = []
+    await restoreBackup(
+      backup,
+      putBlob,
+      (key) => {
+        deleted.push(key)
+        return deleteBlob(key)
+      },
+      async () => ['avatar', 'img-c1', 'img-orphan']
+    )
     expect(deleted).toEqual(['img-orphan'])
   })
 })

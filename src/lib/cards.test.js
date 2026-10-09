@@ -48,4 +48,16 @@ describe('filterCards', () => {
   it('returns no cards when nothing matches', () => {
     expect(filterCards(mixed, 'zzz')).toEqual([])
   })
+
+  it('treats an absent or null query as an empty query', () => {
+    expect(filterCards(mixed).map((x) => x.id)).toEqual(['n1', 's1', 's2'])
+    expect(filterCards(mixed, null).map((x) => x.id)).toEqual(['n1', 's1', 's2'])
+    expect(filterCards(mixed, undefined).map((x) => x.id)).toEqual(['n1', 's1', 's2'])
+  })
+
+  it('does not match the literal text undefined on a partial card', () => {
+    const partial = [{ id: 'p1', type: 'note', body: 'body only' }, { id: 'p2', type: 'showcase' }]
+    expect(filterCards(partial, 'undefined')).toEqual([])
+    expect(filterCards(partial, 'body').map((x) => x.id)).toEqual(['p1'])
+  })
 })

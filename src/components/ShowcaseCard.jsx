@@ -17,11 +17,13 @@ export default function ShowcaseCard({ card, editMode, onChange, onDelete, onIma
     missing: isMissingBlob(card.image, imageUrl, idbStatus !== 'loading'),
   })
   const placeholderText =
-    imageState === 'missing' || imageState === 'failed'
+    imageState === 'missing'
       ? 'Image missing'
-      : imageState === 'loading'
-        ? 'Loading…'
-        : 'No image'
+      : imageState === 'failed'
+        ? 'Image failed to load'
+        : imageState === 'loading'
+          ? 'Loading…'
+          : 'No image'
 
   async function handleFile(e) {
     const file = e.target.files?.[0]

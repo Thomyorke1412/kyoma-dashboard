@@ -38,34 +38,6 @@ export default function App() {
   }, [state])
 
   useEffect(() => {
-    function onKeyDown(e) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-
-      if (e.key === 'Escape') {
-        setFilterQuery('')
-        setFilterOpen(false)
-        return
-      }
-
-      const target = e.target
-      const typing =
-        target instanceof HTMLElement &&
-        (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)
-      if (typing) return
-
-      if (e.key === 'e' || e.key === 'E') {
-        setEditMode((v) => !v)
-      } else if (e.key === '/') {
-        e.preventDefault()
-        setFilterOpen(true)
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
-
-  useEffect(() => {
     if (filterOpen && filterRef.current) filterRef.current.focus()
   }, [filterOpen])
 
@@ -115,6 +87,36 @@ export default function App() {
 
   const showcaseCards = state.cards.filter((c) => c.type === 'showcase' && c.image)
   const viewerIndex = viewerCardId ? showcaseCards.findIndex((c) => c.id === viewerCardId) : -1
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.repeat) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (viewerIndex >= 0) return
+
+      if (e.key === 'Escape') {
+        setFilterQuery('')
+        setFilterOpen(false)
+        return
+      }
+
+      const target = e.target
+      const typing =
+        target instanceof HTMLElement &&
+        (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)
+      if (typing) return
+
+      if (e.key === 'e' || e.key === 'E') {
+        setEditMode((v) => !v)
+      } else if (e.key === '/') {
+        e.preventDefault()
+        setFilterOpen(true)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [viewerIndex])
 
   return (
     <>

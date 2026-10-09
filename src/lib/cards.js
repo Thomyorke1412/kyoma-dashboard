@@ -8,11 +8,11 @@ export function reorderCards(cards, fromId, toId) {
   return next
 }
 
-export function filterCards(cards, query) {
-  const q = query.trim().toLowerCase()
+export function filterCards(cards, query = '') {
+  const q = (query ?? '').trim().toLowerCase()
   if (!q) return cards
   return cards.filter((c) => {
-    const hay = c.type === 'note' ? `${c.title} ${c.body}` : `${c.caption}`
-    return hay.toLowerCase().includes(q)
+    const fields = c.type === 'note' ? [c.title, c.body] : [c.caption]
+    return fields.some((f) => typeof f === 'string' && f.toLowerCase().includes(q))
   })
 }
