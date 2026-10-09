@@ -148,14 +148,14 @@ describe('backgroundLayerStyle', () => {
   })
 
   it('carries zoom, filters and opacity into the layer', () => {
-    const style = backgroundLayerStyle({ zoom: 2, brightness: 1.5, saturation: 0.5, grayscale: 0.25, opacity: 0.75 })
+    const style = backgroundLayerStyle({ ...DEFAULT_ADJUST, zoom: 2, brightness: 1.5, saturation: 0.5, grayscale: 0.25, opacity: 0.75 })
     expect(style.transform).toBe('translate(-50%, -50%) scale(2) rotate(0deg)')
     expect(style.filter).toBe('blur(0px) brightness(1.5) saturate(0.5) grayscale(0.25)')
     expect(style.opacity).toBe(0.75)
   })
 
-  it('clamps hostile input before styling', () => {
-    const style = backgroundLayerStyle({ zoom: 99, blur: 400, opacity: 9 })
+  it('renders hostile values clamped once at the state edge', () => {
+    const style = backgroundLayerStyle(clampAdjust({ zoom: 99, blur: 400, opacity: 9 }))
     expect(style.transform).toContain('scale(4)')
     expect(style.width).toBe('calc(100cqw + 48px)')
     expect(style.opacity).toBe(1)
@@ -174,10 +174,10 @@ describe('backgroundDimStyle', () => {
     expect(backgroundDimStyle(DEFAULT_ADJUST)).toEqual({ background: 'rgba(0, 0, 0, 0)' })
   })
 
-  it('clamps dim into its range', () => {
-    expect(backgroundDimStyle({ dim: 1.5 }).background).toBe('rgba(0, 0, 0, 0.8)')
-    expect(backgroundDimStyle({ dim: -2 }).background).toBe('rgba(0, 0, 0, 0)')
-    expect(backgroundDimStyle(undefined).background).toBe('rgba(0, 0, 0, 0)')
+  it('renders dim clamped once at the state edge', () => {
+    expect(backgroundDimStyle(clampAdjust({ dim: 1.5 })).background).toBe('rgba(0, 0, 0, 0.8)')
+    expect(backgroundDimStyle(clampAdjust({ dim: -2 })).background).toBe('rgba(0, 0, 0, 0)')
+    expect(backgroundDimStyle(clampAdjust(undefined)).background).toBe('rgba(0, 0, 0, 0)')
   })
 })
 
@@ -245,8 +245,8 @@ describe('dragAdjustBy', () => {
     expect(out.y).toBeCloseTo(0.25)
   })
 
-  it('normalizes a hostile adjust before dragging', () => {
-    const out = dragAdjustBy({ y: 2 }, 0, 0, wideFrame, photo)
+  it('drags from a hostile adjust clamped once at the state edge', () => {
+    const out = dragAdjustBy(clampAdjust({ y: 2 }), 0, 0, wideFrame, photo)
     expect(out.y).toBe(1)
   })
 })

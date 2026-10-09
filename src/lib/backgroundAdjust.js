@@ -1,4 +1,4 @@
-import { clampZoom, normalizeRotation, wheelZoomFactor } from './crop'
+import { clampZoom, normalizeRotation, rotatedSize, wheelZoomFactor } from './crop'
 
 export const MAX_BLUR = 24
 export const MAX_DIM = 0.8
@@ -51,30 +51,26 @@ function isQuarterTurn(rotation) {
 
 function layerBox(adjust, frame) {
   const pad = 2 * adjust.blur
-  const width = frame.width + pad
-  const height = frame.height + pad
-  return isQuarterTurn(adjust.rotation) ? { width: height, height: width } : { width, height }
+  return rotatedSize({ width: frame.width + pad, height: frame.height + pad }, adjust.rotation)
 }
 
 export function backgroundLayerStyle(adjust) {
-  const a = clampAdjust(adjust)
-  const pad = 2 * a.blur
-  const widthUnit = isQuarterTurn(a.rotation) ? '100cqh' : '100cqw'
-  const heightUnit = isQuarterTurn(a.rotation) ? '100cqw' : '100cqh'
+  const pad = 2 * adjust.blur
+  const widthUnit = isQuarterTurn(adjust.rotation) ? '100cqh' : '100cqw'
+  const heightUnit = isQuarterTurn(adjust.rotation) ? '100cqw' : '100cqh'
   return {
     width: pad > 0 ? `calc(${widthUnit} + ${pad}px)` : widthUnit,
     height: pad > 0 ? `calc(${heightUnit} + ${pad}px)` : heightUnit,
     objectFit: 'cover',
-    objectPosition: `${a.x * 100}% ${a.y * 100}%`,
-    transform: `translate(-50%, -50%) scale(${a.zoom}) rotate(${a.rotation}deg)`,
-    filter: `blur(${a.blur}px) brightness(${a.brightness}) saturate(${a.saturation}) grayscale(${a.grayscale})`,
-    opacity: a.opacity,
+    objectPosition: `${adjust.x * 100}% ${adjust.y * 100}%`,
+    transform: `translate(-50%, -50%) scale(${adjust.zoom}) rotate(${adjust.rotation}deg)`,
+    filter: `blur(${adjust.blur}px) brightness(${adjust.brightness}) saturate(${adjust.saturation}) grayscale(${adjust.grayscale})`,
+    opacity: adjust.opacity,
   }
 }
 
 export function backgroundDimStyle(adjust) {
-  const a = clampAdjust(adjust)
-  return { background: `rgba(0, 0, 0, ${a.dim})` }
+  return { background: `rgba(0, 0, 0, ${adjust.dim})` }
 }
 
 function preDelta(dx, dy, rotation, zoom) {
@@ -92,29 +88,26 @@ function preDelta(dx, dy, rotation, zoom) {
 }
 
 export function dragAdjustBy(adjust, dx, dy, frame, natural) {
-  const a = clampAdjust(adjust)
   const dxFinite = Number.isFinite(dx) ? dx : 0
   const dyFinite = Number.isFinite(dy) ? dy : 0
-  if (!frame?.width || !frame?.height || !natural?.width || !natural?.height) return a
-  const box = layerBox(a, frame)
+  if (!frame?.width || !frame?.height || !natural?.width || !natural?.height) return adjust
+  const box = layerBox(adjust, frame)
   const scale = Math.max(box.width / natural.width, box.height / natural.height)
   const spanX = box.width - natural.width * scale
   const spanY = box.height - natural.height * scale
-  const delta = preDelta(dxFinite, dyFinite, a.rotation, a.zoom)
+  const delta = preDelta(dxFinite, dyFinite, adjust.rotation, adjust.zoom)
   return {
-    ...a,
-    x: spanX < 0 ? clamp01(a.x + delta.x / spanX) : a.x,
-    y: spanY < 0 ? clamp01(a.y + delta.y / spanY) : a.y,
+    ...adjust,
+    x: spanX < 0 ? clamp01(adjust.x + delta.x / spanX) : adjust.x,
+    y: spanY < 0 ? clamp01(adjust.y + delta.y / spanY) : adjust.y,
   }
 }
 
 export function zoomAdjustBy(adjust, deltaY) {
-  const a = clampAdjust(adjust)
-  return { ...a, zoom: clampZoom(a.zoom * wheelZoomFactor(deltaY)) }
+  return { ...adjust, zoom: clampZoom(adjust.zoom * wheelZoomFactor(deltaY)) }
 }
 
 export function rotateAdjustBy(adjust, degrees) {
-  const a = clampAdjust(adjust)
   const step = Number.isFinite(degrees) ? degrees : 0
-  return { ...a, rotation: normalizeRotation(a.rotation + step) }
+  return { ...adjust, rotation: normalizeRotation(adjust.rotation + step) }
 }

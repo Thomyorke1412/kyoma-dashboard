@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { arrowNudge } from '../lib/crop'
+import { arrowNudge, dragDelta } from '../lib/crop'
 import { backgroundDimStyle, backgroundLayerStyle, dragAdjustBy, zoomAdjustBy } from '../lib/backgroundAdjust'
 
 export default function BackgroundStage({ src, adjust, onChange }) {
@@ -40,9 +40,8 @@ export default function BackgroundStage({ src, adjust, onChange }) {
   function handlePointerMove(event) {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
-    const dx = event.clientX - drag.x
-    const dy = event.clientY - drag.y
-    dragRef.current = { ...drag, x: event.clientX, y: event.clientY }
+    const { dx, dy, next } = dragDelta(drag, event)
+    dragRef.current = { ...drag, ...next }
     onChange((current) => dragAdjustBy(current, dx, dy, drag.frame, naturalRef.current))
   }
 

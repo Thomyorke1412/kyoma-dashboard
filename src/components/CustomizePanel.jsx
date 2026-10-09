@@ -22,7 +22,7 @@ export default function CustomizePanel({ theme, onThemeChange, onClose, onNotify
   const [urlInput, setUrlInput] = useState('')
   const background = theme.background
   const imageBackground = background.type === 'idb' || background.type === 'url'
-  const adjust = clampAdjust(background.adjust)
+  const adjust = background.adjust
   const stageIdbUrl = useIdbImage(background.type === 'idb' ? background.value : null)
   const stageSrc = background.type === 'idb' ? stageIdbUrl : background.value
 
@@ -35,7 +35,7 @@ export default function CustomizePanel({ theme, onThemeChange, onClose, onNotify
     if (!file) return
     try {
       await putBlob('background', file)
-      onThemeChange({ background: { type: 'idb', value: 'background' } })
+      onThemeChange({ background: { type: 'idb', value: 'background', adjust: { ...DEFAULT_ADJUST } } })
     } catch {
       onNotify('Could not store background image — browser storage may be full or blocked.')
     }
@@ -44,7 +44,7 @@ export default function CustomizePanel({ theme, onThemeChange, onClose, onNotify
 
   function applyUrl() {
     if (!urlInput.trim()) return
-    onThemeChange({ background: { type: 'url', value: urlInput.trim() } })
+    onThemeChange({ background: { type: 'url', value: urlInput.trim(), adjust: { ...DEFAULT_ADJUST } } })
   }
 
   return (
@@ -69,7 +69,7 @@ export default function CustomizePanel({ theme, onThemeChange, onClose, onNotify
                 className={`preset-swatch ${background.type === 'preset' && background.value === id ? 'selected' : ''}`}
                 style={{ background: css }}
                 title={id}
-                onClick={() => onThemeChange({ background: { type: 'preset', value: id } })}
+                onClick={() => onThemeChange({ background: { type: 'preset', value: id, adjust: { ...DEFAULT_ADJUST } } })}
               />
             ))}
           </div>
@@ -79,7 +79,7 @@ export default function CustomizePanel({ theme, onThemeChange, onClose, onNotify
           <input
             type="color"
             value={background.type === 'color' ? background.value : '#1b2838'}
-            onChange={(e) => onThemeChange({ background: { type: 'color', value: e.target.value } })}
+            onChange={(e) => onThemeChange({ background: { type: 'color', value: e.target.value, adjust: { ...DEFAULT_ADJUST } } })}
             title="Solid background color"
           />
         </div>
