@@ -197,6 +197,28 @@ body {
   border-color: #997c52;
 }
 
+.level-badge.lvl_100,
+.level-badge.lvl_200,
+.level-badge.lvl_4300 {
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 0;
+  background: #222223;
+  font-size: 14px;
+  line-height: 32px;
+  text-shadow: 1px 1px #1a1a1a;
+}
+
+.level-badge.lvl_100 {
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+
+.level-badge.lvl_200 {
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 50% 100%, 0 60%);
+}
+
 .xp-bar {
   flex: 1;
   height: 3px;
@@ -411,6 +433,20 @@ textarea:focus {
     box-sizing: border-box;
     width: 100%;
   }
+
+  .card-caption {
+    position: static;
+    padding: 6px 0 0;
+    background: transparent;
+    line-height: normal;
+    opacity: 1;
+    transform: none;
+  }
+
+  .card-media:hover .card-image,
+  .card:focus-within .card-image {
+    transform: none;
+  }
 }
 
 .card {
@@ -427,6 +463,11 @@ textarea:focus {
   outline-offset: -2px;
 }
 
+.card-media {
+  position: relative;
+  overflow: hidden;
+}
+
 .card-image {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -434,6 +475,12 @@ textarea:focus {
   display: block;
   cursor: pointer;
   background: #000000;
+  transition: transform 0.2s ease-in-out;
+}
+
+.card-media:hover .card-image,
+.card:focus-within .card-image {
+  transform: scale(1.05);
 }
 
 .card-image-placeholder {
@@ -451,10 +498,39 @@ textarea:focus {
 }
 
 .card-caption {
-  padding: 6px 0 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2px 12px;
+  background: rgba(0, 0, 0, 0.8);
   color: #ffffff;
   font-size: 13px;
+  line-height: 24px;
+  text-align: left;
   word-break: break-word;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  pointer-events: none;
+}
+
+.card:hover .card-caption,
+.card:focus-within .card-caption {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-caption-edit {
+  position: static;
+  padding: 6px 0 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 13px;
+  line-height: normal;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
 
 .caption-empty {

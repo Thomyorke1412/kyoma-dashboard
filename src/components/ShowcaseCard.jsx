@@ -64,28 +64,31 @@ export default function ShowcaseCard({ card, editMode, onChange, onDelete, onIma
       onDrop={dnd.onDrop}
       onDragEnd={dnd.onDragEnd}
     >
-      {imageUrl && !failed ? (
-        <img
-          className="card-image"
-          src={imageUrl}
-          alt={card.caption || 'showcase image'}
-          onClick={() => !editMode && onOpenViewer()}
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <div className="card-image-placeholder">{placeholderText}</div>
-      )}
-      <div className="card-caption">
-        {editMode ? (
-          <input
-            placeholder="Caption"
-            value={card.caption}
-            onChange={(e) => onChange({ caption: e.target.value })}
-            style={{ width: '100%' }}
+      <div className="card-media">
+        {imageUrl && !failed ? (
+          <img
+            className="card-image"
+            src={imageUrl}
+            alt={card.caption || 'showcase image'}
+            tabIndex={editMode ? undefined : 0}
+            onClick={() => !editMode && onOpenViewer()}
+            onError={() => setFailed(true)}
           />
         ) : (
-          card.caption || <span className="caption-empty">Untitled</span>
+          <div className="card-image-placeholder">{placeholderText}</div>
         )}
+        <div className={`card-caption ${editMode ? 'card-caption-edit' : ''}`}>
+          {editMode ? (
+            <input
+              placeholder="Caption"
+              value={card.caption}
+              onChange={(e) => onChange({ caption: e.target.value })}
+              style={{ width: '100%' }}
+            />
+          ) : (
+            card.caption || <span className="caption-empty">Untitled</span>
+          )}
+        </div>
       </div>
       {editMode && (
         <div className="card-toolbar">
