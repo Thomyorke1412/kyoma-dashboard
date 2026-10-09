@@ -738,6 +738,14 @@ textarea:focus {
   overflow: hidden;
 }
 
+.gallery-row-body .card {
+  border: 1px solid #000000;
+}
+
+.gallery-row-body .card:hover {
+  border: 1px solid #97c0e3;
+}
+
 @media (max-width: 800px) {
   .gallery-row-body {
     grid-template-columns: repeat(2, 1fr);

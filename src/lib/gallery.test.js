@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildRows, resolveViewer } from './gallery'
+import { buildRows, resolveViewer, wrapIndex } from './gallery'
 
 const showcase = (id) => ({ id, type: 'showcase', image: { type: 'url', value: `https://x.test/${id}.png` }, caption: id })
 const note = (id) => ({ id, type: 'note', title: id, body: '' })
@@ -86,35 +86,38 @@ describe('resolveViewer', () => {
   const four = showcase('d')
   const byId = new Map([one, two, three, four].map((c) => [c.id, c]))
 
-  it('collects items from the requested row only', () => {
+it('collects items from the requested row only', () => {
     const rows = buildRows([one, two, three, four])
-    const { items, index } = resolveViewer(rows, byId, rows[1].id, 'd')
+    const { items, index, cardId } = resolveViewer(rows, byId, rows[1].id, 'd')
     expect(items.map((c) => c.id)).toEqual(['d'])
     expect(index).toBe(0)
+    expect(cardId).toBe('d')
   })
 
   it('points the index at the focused card inside its row', () => {
     const rows = buildRows([one, two, three, four])
-    const { items, index } = resolveViewer(rows, byId, rows[0].id, 'c')
+    const { items, index, cardId } = resolveViewer(rows, byId, rows[0].id, 'c')
     expect(items.map((c) => c.id)).toEqual(['a', 'b', 'c'])
     expect(index).toBe(2)
+    expect(cardId).toBe('c')
   })
 
   it('returns no items and index -1 when the row is gone', () => {
     const rows = buildRows([one, two, three, four])
-    expect(resolveViewer(rows, byId, 'gone', 'a')).toEqual({ items: [], index: -1 })
+    expect(resolveViewer(rows, byId, 'gone', 'a')).toEqual({ items: [], index: -1, cardId: null })
   })
 
   it('returns no items when the viewer was never opened', () => {
-    expect(resolveViewer(buildRows([one]), byId, null, null)).toEqual({ items: [], index: -1 })
+    expect(resolveViewer(buildRows([one]), byId, null, null)).toEqual({ items: [], index: -1, cardId: null })
   })
 
   it('falls back to the first item when the focused card was deleted', () => {
     const rows = buildRows([one, two, three])
     const surviving = new Map([one, two].map((c) => [c.id, c]))
-    const { items, index } = resolveViewer(buildRows([one, two, three]).slice(0, 1), surviving, rows[0].id, 'c')
+    const { items, index, cardId } = resolveViewer(buildRows([one, two, three]).slice(0, 1), surviving, rows[0].id, 'c')
     expect(items.map((c) => c.id)).toEqual(['a', 'b'])
     expect(index).toBe(0)
+    expect(cardId).toBe('a')
   })
 
   it('drops row ids whose card is gone or image-less', () => {
@@ -124,5 +127,57 @@ describe('resolveViewer', () => {
       [two.id, imageless('b')],
     ])
     expect(resolveViewer(rows, shrunk, rows[0].id, 'a').items.map((c) => c.id)).toEqual(['a'])
+  })
+
+  it('reports the resolved card id when the focused card lost its image', () => {
+    const rows = buildRows([one, two, three])
+    const stripped = new Map([
+      [one.id, one],
+      [two.id, imageless('b')],
+      [three.id, three],
+    ])
+    const { items, index, cardId } = resolveViewer(rows, stripped, rows[0].id, 'b')
+    expect(items.map((c) => c.id)).toEqual(['a', 'c'])
+    expect(index).toBe(0)
+    expect(cardId).toBe('a')
+  })
+
+  it('resolves a null card id to the first item', () => {
+    const rows = buildRows([one, two, three])
+    const { index, cardId } = resolveViewer(rows, byId, rows[0].id, null)
+    expect(index).toBe(0)
+    expect(cardId).toBe('a')
+  })
+})
+
+describe('wrapIndex', () => {
+  it('stays at zero when there is a single item in either direction', () => {
+    expect(wrapIndex(0, 1, 1)).toBe(0)
+    expect(wrapIndex(0, -1, 1)).toBe(0)
+  })
+
+  it('wraps backwards from the first item to the last', () => {
+    expect(wrapIndex(0, -1, 3)).toBe(2)
+  })
+
+  it('wraps forwards from the last item to the first', () => {
+    expect(wrapIndex(2, 1, 3)).toBe(0)
+  })
+
+  it('moves within range without wrapping in the middle', () => {
+    expect(wrapIndex(1, 1, 4)).toBe(2)
+    expect(wrapIndex(2, -1, 4)).toBe(1)
+    expect(wrapIndex(0, 1, 4)).toBe(1)
+    expect(wrapIndex(3, -1, 4)).toBe(2)
+  })
+
+  it('treats a jump larger than the row as repeated wraps', () => {
+    expect(wrapIndex(0, 4, 3)).toBe(1)
+    expect(wrapIndex(2, -4, 3)).toBe(1)
+  })
+
+  it('reports no index for an empty row', () => {
+    expect(wrapIndex(0, 1, 0)).toBe(-1)
+    expect(wrapIndex(0, -1, 0)).toBe(-1)
   })
 })

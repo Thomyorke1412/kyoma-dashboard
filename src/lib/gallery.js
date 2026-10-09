@@ -12,8 +12,15 @@ export function buildRows(cards, perRow = 3) {
 
 export function resolveViewer(rows, cardsById, rowId, cardId) {
   const row = rowId ? rows.find((r) => r.id === rowId) : null
-  if (!row) return { items: [], index: -1 }
+  if (!row) return { items: [], index: -1, cardId: null }
   const items = row.cardIds.map((id) => cardsById.get(id)).filter((c) => c && c.image)
-  if (items.length === 0) return { items, index: -1 }
-  return { items, index: Math.max(0, items.findIndex((c) => c.id === cardId)) }
+  if (items.length === 0) return { items, index: -1, cardId: null }
+  const index = Math.max(0, items.findIndex((c) => c.id === cardId))
+  return { items, index, cardId: items[index].id }
+}
+
+export function wrapIndex(index, dir, length) {
+  if (!Number.isFinite(length) || length < 1) return -1
+  const size = Math.floor(length)
+  return ((((index + dir) % size) + size) % size)
 }

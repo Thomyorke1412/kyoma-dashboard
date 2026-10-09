@@ -11,7 +11,7 @@ import Toast from './components/Toast'
 import { awardXp, XP_PER_NOTE, XP_PER_IMAGE } from './lib/xp'
 import { deleteBlob } from './lib/idb'
 import { filterCards } from './lib/cards'
-import { buildRows, resolveViewer } from './lib/gallery'
+import { buildRows, resolveViewer, wrapIndex } from './lib/gallery'
 
 const PER_ROW = 3
 
@@ -92,12 +92,14 @@ export default function App() {
   const visibleCards = filterCards(state.cards, filterQuery)
   const galleryRows = buildRows(visibleCards, PER_ROW)
   const cardsById = new Map(state.cards.map((c) => [c.id, c]))
-  const { items: viewerItems, index: viewerIndex } = resolveViewer(galleryRows, cardsById, viewer?.rowId ?? null, viewer?.cardId ?? null)
+  const { items: viewerItems, index: viewerIndex, cardId: resolvedViewerCardId } = resolveViewer(galleryRows, cardsById, viewer?.rowId ?? null, viewer?.cardId ?? null)
   const viewerRowActive = viewer !== null && viewerIndex >= 0
 
   useEffect(() => {
-    if (viewer && !viewerRowActive) setViewer(null)
-  }, [viewer, viewerRowActive])
+    if (!viewer) return
+    if (!viewerRowActive) setViewer(null)
+    else if (viewer.cardId !== resolvedViewerCardId) setViewer({ ...viewer, cardId: resolvedViewerCardId })
+  }, [viewer, viewerRowActive, resolvedViewerCardId])
 
   function openRow(rowId, cardId) {
     const row = rowId ? galleryRows.find((r) => r.id === rowId) : galleryRows.find((r) => r.cardIds.includes(cardId))
@@ -154,6 +156,7 @@ export default function App() {
         />
         <CardGrid
           cards={state.cards}
+          visibleCards={visibleCards}
           galleryRows={galleryRows}
           editMode={editMode}
           query={filterQuery}
@@ -184,8 +187,8 @@ export default function App() {
           index={viewerIndex}
           onClose={() => setViewer(null)}
           onNavigate={(dir) => {
-            if (viewerItems.length === 0) return
-            const next = (viewerIndex + dir + viewerItems.length) % viewerItems.length
+            const next = wrapIndex(viewerIndex, dir, viewerItems.length)
+            if (next < 0) return
             setViewer((cur) => (cur ? { ...cur, cardId: viewerItems[next].id } : cur))
           }}
         />

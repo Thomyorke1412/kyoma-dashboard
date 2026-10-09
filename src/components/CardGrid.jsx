@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { reorderCards, filterCards } from '../lib/cards'
+import { reorderCards } from '../lib/cards'
 import ShowcaseCard from './ShowcaseCard'
 import TextNoteCard from './TextNoteCard'
 import GalleryRow from './GalleryRow'
 
-export default function CardGrid({ cards, galleryRows, editMode, query, onQueryChange, filterOpen, onOpenFilter, filterRef, onCardsChange, onAddCard, onUpdateCard, onDeleteCard, onImageAttached, onOpenRow, onNotify }) {
+export default function CardGrid({ cards, visibleCards, galleryRows, editMode, query, onQueryChange, filterOpen, onOpenFilter, filterRef, onCardsChange, onAddCard, onUpdateCard, onDeleteCard, onImageAttached, onOpenRow, onNotify }) {
   const [dragId, setDragId] = useState(null)
   const [overId, setOverId] = useState(null)
-  const visibleCards = filterCards(cards, query)
   const galleryCardIds = new Set(galleryRows.flatMap((row) => row.cardIds))
   const cardsById = new Map(cards.map((c) => [c.id, c]))
   const restCards = visibleCards.filter((c) => !galleryCardIds.has(c.id))

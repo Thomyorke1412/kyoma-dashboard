@@ -1,11 +1,9 @@
 import ShowcaseCard from './ShowcaseCard'
 
 export default function GalleryRow({ row, index, cards, editMode, onUpdateCard, onDeleteCard, onImageAttached, onOpenRow, onNotify, dndProps }) {
-  const label = cards[0]?.caption || `Showcase ${index + 1}`
-
   return (
-    <div className="gallery-row" data-row-id={row.id}>
-      <div className="gallery-row-header">{label}</div>
+    <div className="gallery-row">
+      <div className="gallery-row-header">{`Showcase ${index + 1}`}</div>
       <div className="gallery-row-body">
         {cards.map((card) => (
           <ShowcaseCard
