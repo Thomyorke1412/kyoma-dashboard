@@ -1,18 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { loadState, saveState } from './lib/storage'
 import { BACKGROUND_PRESETS } from './lib/presets'
 import useIdbImage from './lib/useIdbImage'
 import ProfileHeader from './components/ProfileHeader'
+import CustomizePanel from './components/CustomizePanel'
 
 export default function App() {
   const [state, setState] = useState(loadState)
   const [editMode, setEditMode] = useState(false)
+  const [customizeOpen, setCustomizeOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const toastTimer = useRef(null)
 
   function notify(message, kind) {
     setToast({ message, kind })
-    window.clearTimeout(notify.timer)
-    notify.timer = window.setTimeout(() => setToast(null), 4000)
+    window.clearTimeout(toastTimer.current)
+    toastTimer.current = window.setTimeout(() => setToast(null), 4000)
   }
   const bgIdbUrl = useIdbImage(state.theme.background.type === 'idb' ? state.theme.background.value : null)
 
@@ -46,10 +49,18 @@ export default function App() {
           editMode={editMode}
           onProfileChange={(patch) => setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }))}
           onToggleEdit={() => setEditMode((v) => !v)}
-          onOpenCustomize={() => {}}
-          onNotify={(m) => notify(m)}
+          onOpenCustomize={() => setCustomizeOpen(true)}
+          onNotify={notify}
         />
       </div>
+      {customizeOpen && (
+        <CustomizePanel
+          theme={state.theme}
+          onThemeChange={(patch) => setState((s) => ({ ...s, theme: { ...s.theme, ...patch } }))}
+          onClose={() => setCustomizeOpen(false)}
+          onNotify={notify}
+        />
+      )}
     </>
   )
 }
