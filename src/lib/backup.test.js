@@ -148,6 +148,19 @@ describe('backup', () => {
     expect(deleted).toEqual(['img-orphan'])
   })
 
+  it('tolerates a non-array cards value in the restored state', async () => {
+    await putBlob('img-orphan', new Blob(['orphan-bytes'], { type: 'image/png' }))
+    const backup = {
+      version: 1,
+      state: { cards: {} },
+      images: { 'img-a': 'data:image/png;base64,aGVsbG8=' },
+    }
+    const restored = await restoreBackup(backup)
+    expect(restored).toBe(backup.state)
+    expect(await (await getBlob('img-a')).text()).toBe('hello')
+    expect(await getBlob('img-orphan')).toBeNull()
+  })
+
   it('routes the sweep enumeration through the injected key lister', async () => {
     const backup = await buildBackup(state)
     const deleted = []

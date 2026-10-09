@@ -7,7 +7,7 @@ function collectIdbRefs(state) {
   }
   add(state.profile?.avatar)
   add(state.theme?.background)
-  for (const card of state.cards ?? []) {
+  for (const card of Array.isArray(state.cards) ? state.cards : []) {
     if (card.type === 'showcase') add(card.image)
   }
   return [...refs]
