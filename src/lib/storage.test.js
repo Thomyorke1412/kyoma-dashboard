@@ -9,7 +9,7 @@ describe('storage', () => {
   it('returns defaults when nothing is stored', () => {
     const state = loadState()
     expect(state.profile.displayName).toBe('New User')
-    expect(state.profile.status.color).toBe('#57cbde')
+    expect(state.profile.status.color).toBe('#6dcff6')
     expect(state.theme.accent).toBe('#66c0f4')
     expect(state.cards).toEqual([])
     expect(state.xp).toBe(0)

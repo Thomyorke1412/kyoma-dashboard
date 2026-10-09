@@ -4,7 +4,7 @@ export const DEFAULT_STATE = {
   profile: {
     avatar: { type: 'url', value: '' },
     displayName: 'New User',
-    status: { text: 'Online', color: '#57cbde' },
+    status: { text: 'Online', color: '#6dcff6' },
     realName: '',
     location: '',
     summary: '',
