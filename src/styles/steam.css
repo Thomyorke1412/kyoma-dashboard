@@ -6,6 +6,11 @@
   --text: #969696;
   --text-dim: #8f98a0;
   --danger: #f37d5c;
+  --gradient-right: rgba(109, 38, 44, 0.301);
+  --gradient-left: rgba(50, 255, 193, 0.103);
+  --gradient-background: rgba(34, 35, 48, 0.93);
+  --gradient-background-right: rgba(109, 38, 44, 0);
+  --gradient-background-left: rgba(50, 255, 193, 0.103);
 }
 
 * {
@@ -26,18 +31,27 @@ body {
   font-weight: 400;
   color: var(--text);
   background-color: #000000;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, rgba(0, 0, 0, 0) 1.5px);
-  background-size: 5px 5px;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 634px, rgba(0, 0, 0, 1) 905px),
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.035) 1px, transparent 1.6px),
+    linear-gradient(to bottom, rgb(32, 52, 58) 0%, rgb(24, 44, 45) 45%, rgb(20, 37, 34) 70%, rgb(0, 0, 0) 100%);
+  background-size: 100% 100%, 11px 11px, 100% 905px;
+  background-repeat: no-repeat, repeat, no-repeat;
   background-position: center top;
-  background-repeat: repeat;
 }
 
 .page-background {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-size: cover;
-  background-position: center;
+  background-color: #000000;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 634px, rgba(0, 0, 0, 1) 905px),
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.035) 1px, transparent 1.6px),
+    linear-gradient(to bottom, rgb(32, 52, 58) 0%, rgb(24, 44, 45) 45%, rgb(20, 37, 34) 70%, rgb(0, 0, 0) 100%);
+  background-size: 100% 100%, 11px 11px, 100% 905px;
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-position: center top;
 }
 
 .app {
@@ -52,7 +66,12 @@ body {
   padding: 24px 12px 0 24px;
   display: flex;
   gap: 20px;
-  background: none;
+  background-color: var(--gradient-background);
+  background-image:
+    radial-gradient(farthest-side at bottom right, var(--gradient-right), transparent 500px),
+    radial-gradient(farthest-corner at bottom left, var(--gradient-left), transparent 600px);
+  background-repeat: no-repeat;
+  background-position: center;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -121,6 +140,7 @@ body {
 
 .level-badge {
   display: inline-block;
+  box-sizing: content-box;
   flex: none;
   width: 28px;
   height: 28px;
@@ -130,7 +150,7 @@ body {
   background: transparent;
   color: #ffffff;
   font-size: 16px;
-  font-weight: normal;
+  font-weight: 200;
   line-height: 26px;
   text-align: center;
   margin-top: 2px;
@@ -288,7 +308,7 @@ textarea:focus {
   margin-left: auto;
   margin-right: auto;
   font-size: 13px;
-  background-color: rgba(34, 35, 48, 0.93);
+  background-color: var(--gradient-background);
   background-repeat: no-repeat;
 }
 
@@ -303,10 +323,10 @@ textarea:focus {
   margin-top: 0;
   padding: 12px 12px 64px 12px;
   background-image:
-    radial-gradient(farthest-side at top right, rgba(39, 176, 255, 0.4), rgba(39, 176, 255, 0) 500px),
-    radial-gradient(farthest-side at top left, rgba(45, 92, 170, 0.4), rgba(45, 92, 170, 0) 600px),
-    radial-gradient(farthest-side at bottom left, rgba(45, 92, 170, 0.3), rgba(45, 92, 170, 0) 600px),
-    radial-gradient(farthest-side at bottom right, rgba(39, 176, 255, 0.3), rgba(39, 176, 255, 0) 500px);
+    radial-gradient(farthest-side at top right, var(--gradient-right), transparent 500px),
+    radial-gradient(farthest-corner at top left, var(--gradient-left), transparent 600px),
+    radial-gradient(farthest-corner at bottom right, var(--gradient-background-right), transparent 500px),
+    radial-gradient(farthest-corner at bottom left, var(--gradient-background-left), transparent 600px);
 }
 
 .add-row {
