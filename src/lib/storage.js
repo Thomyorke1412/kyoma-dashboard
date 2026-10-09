@@ -8,6 +8,8 @@ export const DEFAULT_STATE = {
     realName: '',
     location: '',
     summary: '',
+    currentGame: '',
+    hoursPlayed: '',
   },
   theme: {
     accent: '#66c0f4',

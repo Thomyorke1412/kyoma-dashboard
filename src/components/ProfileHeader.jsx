@@ -7,6 +7,9 @@ export default function ProfileHeader({ profile, xp, editMode, onProfileChange, 
   const avatarUrl = useIdbImage(profile.avatar.type === 'idb' ? profile.avatar.value : null)
   const avatarSrc = profile.avatar.type === 'url' && profile.avatar.value ? profile.avatar.value : avatarUrl
   const [avatarUrlInput, setAvatarUrlInput] = useState('')
+  const currentGame = profile.currentGame ?? ''
+  const hoursPlayed = profile.hoursPlayed ?? ''
+  const hasCurrentGame = currentGame !== '' || hoursPlayed !== ''
 
   async function handleAvatarFile(e) {
     const file = e.target.files?.[0]
@@ -85,6 +88,34 @@ export default function ProfileHeader({ profile, xp, editMode, onProfileChange, 
             <span style={{ color: profile.status.color }}>{profile.status.text}</span>
           )}
         </div>
+        {(editMode || hasCurrentGame) && (
+          <div className="profile-current-game">
+            {editMode ? (
+              <>
+                <input
+                  placeholder="Current game"
+                  value={currentGame}
+                  onChange={(e) => onProfileChange({ currentGame: e.target.value })}
+                />
+                <input
+                  placeholder="Hours played"
+                  value={hoursPlayed}
+                  onChange={(e) => onProfileChange({ hoursPlayed: e.target.value })}
+                />
+              </>
+            ) : (
+              <>
+                {currentGame !== '' && (
+                  <>
+                    <span className="current-game-dot" style={{ background: profile.status.color }} />
+                    <span className="current-game-name">{currentGame}</span>
+                  </>
+                )}
+                {hoursPlayed !== '' && <span className="current-game-hours">{hoursPlayed}</span>}
+              </>
+            )}
+          </div>
+        )}
         <LevelBadge xp={xp} />
         <div className="profile-fields">
           {editMode ? (
